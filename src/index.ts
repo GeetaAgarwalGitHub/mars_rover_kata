@@ -1,10 +1,28 @@
-import { readBuilderProgram } from "typescript";
 import { clear, print, askQuestion } from "../src/console";
-import { getFirstLineOfInput } from "../src/first_line_of_input";
+import {
+  checkIfCordinatesAreValid,
+  checkStartingPosition,
+} from "../src/plateau";
 
-export type Coordinates = {
+import {
+  getRoverposition,
+  checkIfMovementIsValid,
+  newCurrentPosition,
+} from "../src/rover";
+
+export interface Coordinates {
   X: number;
   Y: number;
+}
+
+export interface CoordinatePosition {
+  xycoordinates: Coordinates;
+  direction: string;
+}
+
+export let currentPosition: CoordinatePosition = {
+  xycoordinates: { X: 0, Y: 0 },
+  direction: "",
 };
 
 export const upperRightCoordinates: Coordinates = { X: 0, Y: 0 };
@@ -16,34 +34,16 @@ export function acceptCoordinates(): void {
   print("--------------------------");
 
   askQuestion(
-    `Please enter the upper right coordinates (each coordinate should be greater than 0) separated by space: `,
+    `Please enter the upper right coordinates (each coordinate should be greater than 0) separated by space (eg: 5 5): `,
     startMarsRover
   );
 }
 
-//This function ensures the Upper Right cooridinates are valid
-//Ensures the coordinates are greater than 0
-//Ensures there are only 2 coordinates provided
-function checkIfCordinatesAreValid(coordinates: string) {
-  //remove all the extra spaces in input string
-  var xy_coordinates: string[] = coordinates
-    .replace(/\s+/g, " ")
-    .trim()
-    .split(" ");
-  if (xy_coordinates.length != 2) return false;
-  if (Number(xy_coordinates[0]) > 0 && Number(xy_coordinates[1]) > 0) {
-    upperRightCoordinates.X = Number(xy_coordinates[0]);
-    upperRightCoordinates.Y = Number(xy_coordinates[1]);
-    return true;
-  }
-  return false;
-}
-
-//If coordinates are valid get first line of input
+//If coordinates are valid get starting position
 function startMarsRover(coordinates: string): void {
   if (coordinates && coordinates.length > 0) {
     if (checkIfCordinatesAreValid(coordinates)) {
-      return getFirstLineOfInput();
+      return getStartingPosition();
     } else {
       print("***************************************");
       print("Sadly, the coordinates are invalid! ☹");
@@ -59,6 +59,86 @@ export function endMarsRover(): void {
   print("***************************************");
   print("Ohho!! your Rover cannot make it to Mars!!. 😭");
   askQuestion("Press ENTER to restart! ", acceptCoordinates);
+}
+
+export function getStartingPosition() {
+  clear(false);
+  print("------------------------");
+  print(`🥳 Ready to Explore !! 🥳`);
+  print("------------------------");
+
+  print("Now we can start our mission!! ");
+  askQuestion(
+    "Please enter the starting position of your rover separated by space (eg: 1 1 N): ",
+    setStartingPosition
+  );
+}
+
+//If starting position get directions to move the rover
+function setStartingPosition(coordinates: string): void {
+  if (coordinates && coordinates.length > 0) {
+    if (checkStartingPosition(coordinates)) {
+      return getRoverMovements();
+    } else {
+      print("***************************************");
+      print("Sadly, the coordinates are invalid! ☹");
+      return endMarsRover();
+    }
+  } else {
+    print(`You did not enter a valid starting position for your rover :(`);
+    return endMarsRover();
+  }
+}
+
+function getRoverMovements(): void {
+  clear(false);
+  print("------------------------");
+  print(`🥳Perfect !! 🥳`);
+  print("------------------------");
+
+  print("Now we can send our rover on the Mars mission!! ");
+  askQuestion(
+    "Please enter the instructions for your rover to move. Let's see where it lands (Please Enter L/R/M): ",
+    moveRover
+  );
+}
+
+function moveRover(movement: string): void {
+  if (movement && movement.length > 0) {
+    if (checkIfMovementIsValid(movement)) {
+      return getOutput(movement);
+    } else {
+      print("***************************************");
+      print("Ohho!! You did not follow the movement rules ☹");
+      return endMarsRover();
+    }
+  } else {
+    print(`You did not enter any instructions for the rover to move :(`);
+    return endMarsRover();
+  }
+}
+
+function getOutput(movement: string) {
+  if (
+    getRoverposition(movement, upperRightCoordinates, currentPosition) !=
+    "Failed"
+  ) {
+    print("Great!! Your rover is currently at the position below ☹");
+    print("***************************************");
+    print(
+      newCurrentPosition.xycoordinates.X.toString() +
+        " " +
+        newCurrentPosition.xycoordinates.Y.toString() +
+        " " +
+        newCurrentPosition.direction
+    );
+    print("***************************************");
+    askQuestion("Press  enter to start again ", getStartingPosition);
+  } else {
+    print("***************************************");
+    print("Sadly, your rover has crashed! ☹");
+    return endMarsRover();
+  }
 }
 
 acceptCoordinates();
